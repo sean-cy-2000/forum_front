@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯文章</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body class="comment-modal">
+    <div>
+        <input type="text" id="title" placeholder="文章標題">
+        <textarea id="content" placeholder="文章內容"></textarea>
+        <input type="text" id="tags" placeholder="請輸入標籤，用逗號分隔">
+        <button onclick="submitEdit()">確定</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('postId');
+
+        async function initializeEdit() {
+            try {
+                const response = await axios.get(`https://20992077.xyz/post/getPostInfo/${postId}`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const post = response.data.post;
+                
+                document.getElementById('title').value = post.title;
+                document.getElementById('content').value = post.content;
+                document.getElementById('tags').value = post.tags.join(', ');
+            } catch (error) {
+                alert('獲取文章資訊失敗');
+            }
+        }
+
+        async function submitEdit() {
+            try {
+                const title = document.getElementById('title').value;
+                const content = document.getElementById('content').value;
+                const tags = document.getElementById('tags').value
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag);
+
+                if (!title.trim() || !content.trim()) {
+                    alert('標題和內容不能為空');
+                    return;
+                }
+
+                const response = await axios.put(
+                    `https://20992077.xyz/post/editPost/${postId}`,
+                    { title, content, tags },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    }
+                );
+
+                if (response.data.message) {
+                    alert('編輯成功');
+                    window.opener.location.reload();
+                    window.close();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || '編輯失敗');
+            }
+        }
+
+        window.onload = initializeEdit;
+    </script>
+</body>
+</html>

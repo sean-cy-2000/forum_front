@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯留言</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="comment-modal">
+    <div>
+        <textarea id="content" placeholder="留言內容"></textarea>
+        <button onclick="submitEdit()">確定</button>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const commentId = urlParams.get('commentId');
+
+        async function initializeEdit() {
+            try {
+                const response = await axios.get(
+                    `https://20992077.xyz/post/getCommentInfo/${commentId}`, 
+                    { headers: { 'Content-Type': 'application/json' } }
+                );
+                document.getElementById('content').value = response.data.comment.content;
+            } catch (error) {
+                alert('獲取留言資訊失敗');
+            }
+        }
+
+        async function submitEdit() {
+            try {
+                const content = document.getElementById('content').value;
+
+                if (!content.trim()) {
+                    alert('留言內容不能為空');
+                    return;
+                }
+
+                const response = await axios.put(
+                    `https://20992077.xyz/post/editComment/${commentId}`,
+                    { content },
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    }
+                );
+
+                if (response.data.message) {
+                    alert('編輯成功');
+                    window.opener.location.reload();
+                    window.close();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || '編輯失敗');
+            }
+        }
+
+        window.onload = initializeEdit;
+    </script>
+</body>
+</html>

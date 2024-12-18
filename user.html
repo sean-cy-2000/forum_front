@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人資料</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./side.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="post-area">
+                <h2>發表的文章</h2>
+                <div id="myPosts"></div>
+            </div>
+
+            <div class="post-area">
+                <h2>收藏的文章</h2>
+                <div id="myCollects"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const api = axios.create({
+            baseURL: 'https://20992077.xyz',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        function createArticleElement(post) {
+            const article = document.createElement('div');
+            article.className = 'post-area';
+            article.innerHTML = `
+        <div class="post-title" onclick="window.location.href='./post.html?id=${post.id}'">${post.title}</div>
+        <button class="delete-btn" onclick="deletePost('${post.id}')">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
+    `;
+            return article;
+        }
+
+        async function deletePost(postId) {
+            try {
+                await api.delete(`/post/deletePost/${postId}`);
+                document.querySelector(`.post-area:has(button[onclick*="${postId}"])`).remove();
+                window.location.reload();
+            } catch (error) {
+                alert(error.response?.data?.message || '刪除失敗');
+            }
+        }
+        async function getMyPosts() {
+            try {
+                const response = await api.get('/user/getMyPosts');
+                const myPostsDiv = document.getElementById('myPosts');
+
+                if (response.data.posts && response.data.posts.length > 0) {
+                    myPostsDiv.innerHTML = '';
+                    response.data.posts.forEach(post => {
+                        myPostsDiv.appendChild(createArticleElement(post));
+                    });
+                } else {
+                    myPostsDiv.innerHTML = '<p>暫無發表的文章</p>';
+                }
+            } catch (error) {
+                console.error('獲取我的文章失敗:', error);
+                document.getElementById('myPosts').innerHTML = '<p>獲取文章失敗</p>';
+            }
+        }
+
+        async function getMyCollects() {
+            try {
+                const response = await api.get('/user/getMyCollects');
+                const myCollectsDiv = document.getElementById('myCollects');
+
+                if (response.data.posts && response.data.posts.length > 0) {
+                    myCollectsDiv.innerHTML = '';
+                    response.data.posts.forEach(post => {
+                        myCollectsDiv.appendChild(createArticleElement(post));
+                    });
+                } else {
+                    myCollectsDiv.innerHTML = '<p>暫無收藏的文章</p>';
+                }
+            } catch (error) {
+                console.error('獲取收藏文章失敗:', error);
+                document.getElementById('myCollects').innerHTML = '<p>獲取收藏失敗</p>';
+            }
+        }
+
+        window.onload = async () => {
+            document.querySelector('.container').insertBefore(
+                createSidebar(),
+                document.querySelector('.main-content')
+            );
+
+            const isLoggedIn = await getUserInfo();
+            if (!isLoggedIn) {
+                window.location.href = './login.html';
+                return;
+            }
+
+            await getMyPosts();
+            await getMyCollects();
+        };
+    </script>
+</body>
+
+</html>

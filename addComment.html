@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>發布留言</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body class="comment-modal">
+    <textarea id="commentInput" placeholder="寫下你的留言..."></textarea>
+    <button onclick="submitComment()">發布</button>
+
+    <script>
+        const api = axios.create({
+            baseURL: 'https://20992077.xyz',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        // 從 URL 獲取參數
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('postId');   // 文章ID
+        const parentCommentId = urlParams.get('parentCommentId') || '0';  // 父留言ID，如果沒有則預設為'0'
+
+        async function submitComment() {
+            try {
+                const content = document.getElementById('commentInput').value;
+
+                // 檢查內容是否為空
+                if (!content.trim()) {
+                    alert('留言內容不能為空');
+                    return;
+                }
+
+                // 根據是否有父留言ID決定API調用
+                let apiUrl = `/post/addComment/${postId}`;
+                if (parentCommentId !== '0') {
+                    apiUrl += `/${parentCommentId}`;
+                }
+
+                const response = await api.post(apiUrl, { content });
+
+                if (response.data.message) {
+                    alert('發布成功');
+
+                    // 關閉當前彈出的留言視窗
+                    window.close();
+
+                    // 刷新父視窗（post.html）的留言列表
+                    window.opener.location.reload();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || '發布失敗');
+            }
+        }
+    </script>
+</body>
+
+</html>

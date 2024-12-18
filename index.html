@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./side.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="search-container">
+                <input type="text" class="input-control" id="keywordInput" placeholder="搜索關鍵字">
+                <!-- <input type="text" class="input-control" id="tagInput" placeholder="搜索標籤"> -->
+                <select id="direction">
+                    <option value="-1">正序</option>
+                    <option value="1">反序</option>
+                </select>
+                <select id="sortBy">
+                    <option value="createdAt">時間</option>
+                    <option value="commentsCount">留言數</option>
+                    <option value="collectorsCount">收藏數</option>
+                    <option value="likersCount">點贊數</option>
+                </select>
+                <select id="pageSize">
+                    <option value="5">5筆/頁</option>
+                    <option value="10" selected>10筆/頁</option>
+                    <option value="20">20筆/頁</option>
+                    <option value="50">50筆/頁</option>
+                </select>
+                <button class="btn btn-primary" onclick="search()">確定</button>
+            </div>
+            <div class="post-area" id="postArea">
+                <!-- 文章會在這裡顯示 -->
+            </div>
+            <div class="pagination">
+                <p>共有 <span id="totalPageSpan">0</span> 頁，目前位於 <span id="currentPageSpan">1</span> 頁</p>
+                <input type="number" class="input-control" id="pageInput" placeholder="輸入頁數，按下enter"
+                    onkeypress="pageEdit(event)">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const api = axios.create({
+            baseURL: 'https://20992077.xyz'
+        });
+
+        let currentPage = 1;
+        let totalPages = 1;
+
+        function pageEdit(event) {
+            if (event.key === 'Enter') {
+                currentPage = parseInt(event.target.value);
+                document.getElementById('currentPageSpan').textContent = currentPage;
+                getPosts();
+            }
+        }
+
+        async function search() {
+            currentPage = 1;
+            await getTotalPages();
+            await getPosts();
+        }
+
+        async function getTotalPages() {
+            try {
+                const keyword = document.getElementById('keywordInput').value.trim();
+                const postsCount = await api.get(`/post/getPostsCount/${keyword || ''}`);
+                const pageSize = parseInt(document.getElementById('pageSize').value);
+                const totalPages = Math.ceil(postsCount.data.count / pageSize);
+                document.getElementById('totalPageSpan').textContent = totalPages;
+                document.getElementById('currentPageSpan').textContent = currentPage;
+            } catch (error) {
+                console.error('獲取文章數量失敗:', error);
+            }
+        }
+
+        async function getPosts() {
+            try {
+                const sortBy = document.getElementById('sortBy').value;
+                const direction = parseInt(document.getElementById('direction').value);  // 排序方向 -1 或 1
+                const pageSize = parseInt(document.getElementById('pageSize').value);
+                const postArea = document.getElementById('postArea');
+                const keyword = document.getElementById('keywordInput').value.trim();
+
+                const response = await api.get(`/post/getPosts/${sortBy}/${pageSize}/${currentPage}/${direction}/${keyword || ''}`);
+
+                if (response.data.posts && response.data.posts.length > 0) {
+                    postArea.innerHTML = '';
+                    response.data.posts.forEach(post => {
+                        const postElement = document.createElement('div');
+                        postElement.className = 'post-area';
+                        postElement.dataset.postId = post._id;
+                        postElement.onclick = () => {
+                            window.location.href = `./post.html?id=${post._id}`;
+                        };
+                        postElement.innerHTML = `
+                           <div class="post-title">${post.title}</div>
+                           <div class="post-info">
+                               <div class="post-info-left">
+                                   <span>作者: ${post.postOwnerId.account}</span>
+                                   <span><i class="fa-regular fa-thumbs-up"></i> ${post.likersCount}</span>
+                                   <span><i class="fa-regular fa-bookmark"></i> ${post.collectorsCount}</span>
+                                   <span><i class="fa-regular fa-comment-dots"></i> ${post.commentsCount}</span>
+                               </div>
+                               <span class="date">發表時間: ${dayjs(post.createdAt).format('YYYY-MM-DD HH:mm')}</span>
+                           </div>
+                       `;
+                        postArea.appendChild(postElement);
+                    });
+                } else {
+                    postArea.innerHTML = '<p>暫無文章</p>';
+                }
+            } catch (error) {
+                console.error('獲取文章失敗:', error);
+                document.getElementById('postArea').innerHTML = '<p>獲取文章失敗</p>';
+            }
+        }
+
+        window.onload = async () => {
+            document.querySelector('.container').insertBefore(
+                createSidebar(),
+                document.querySelector('.main-content')
+            );
+
+            await getUserInfo();
+            await getTotalPages();
+            await getPosts();
+        };
+    </script>
+</body>
+
+</html>

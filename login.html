@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+    <script src="./url.js"></script>
+</head>
+
+<body
+    style="width: 25vw; min-width: 300px; height: 100vh; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px;">
+    <input type="text" id="account" placeholder="帳號">
+    <input type="password" id="password" placeholder="密碼">
+    <div>
+        <button onclick="login()">登入</button>
+        <button onclick="register()">註冊</button>
+    </div>
+    
+    <script>
+        async function login() {
+            try {
+                const account = document.getElementById('account').value;
+                const password = document.getElementById('password').value;
+
+                const response = await axios.post(`https://20992077.xyz/user/login`, {
+                    account,
+                    password
+                });
+
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('account', response.data.account);
+                alert(response.data.message);
+                window.location.href = './index.html';
+            } catch (error) {
+                alert(error.response?.data?.message || `登入失敗 ${error}`);
+            }
+        }
+
+        async function register() {
+            try {
+                const account = document.getElementById('account').value;
+                const password = document.getElementById('password').value;
+
+                const response = await axios.post(`https://20992077.xyz/user/register`, {
+                    account, password
+                });
+
+                alert(response.data.message);
+            } catch (error) {
+                alert(error.response?.data?.message || '註冊失敗');
+            }
+        }
+    </script>
+</body>
+
+</html>

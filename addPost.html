@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>發表文章</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body class="comment-modal">
+    <div>
+        <input type="text" id="title" placeholder="文章標題">
+        <textarea id="content" placeholder="文章內容"></textarea>
+        <input type="text" id="tags" placeholder="請輸入標籤，用逗號分隔">
+        <button onclick="public()">發布</button>
+    </div>
+
+    <script>
+        async function public() {
+            try {
+                const title = document.getElementById('title').value;
+                const content = document.getElementById('content').value;
+                const tags = document.getElementById('tags').value
+                    .split(',')
+                    .map(tag => tag.trim())     // 去除空白
+                    .filter(tag => tag);        // 去除空字串
+
+                if (!title.trim() || !content.trim()) {
+                    alert('標題和內容不能為空');
+                    return;
+                }
+
+                const response = await axios.post(
+                    'https://20992077.xyz/post/createPost',
+                    { title, content, tags },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    }
+                );
+
+                if (response.data.message) {
+                    alert('發布成功');
+                    window.opener.location.reload();  // 重新整理父視窗
+                    window.close();
+                }
+            } catch (error) {
+                alert(error.response?.data?.message || '發布失敗');
+            }
+        }
+    </script>
+</body>
+
+</html>

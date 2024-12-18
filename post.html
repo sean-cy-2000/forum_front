@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文章詳情</title>
+    <!-- 引入必要的函式庫 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <script src="./side.js"></script>
+</head>
+<style>
+    em {
+        margin-left: 20px
+    }
+</style>
+
+<body>
+    <!-- 整體容器 -->
+    <div class="container">
+        <!-- 主要內容區 -->
+        <div class="main-content">
+            <!-- 文章區塊：使用最簡化的結構 -->
+            <div class="post-area">
+                <div style="display: flex; align-items: center;">
+                    <h1 id="postTitle"></h1>
+                    <button class="interaction-btn" id="editBtn" style="display: none;" onclick="window.open(
+                        `editPost.html?postId=${currentPostId}`,
+                        'editWindow',
+                        `width=500,height=300,left=${(window.innerWidth - 500) / 2},top=${(window.innerHeight - 300) / 2}`
+                    )">
+                        <i class="fa-solid fa-pencil"></i>
+                    </button>
+                </div>
+                <div class="info">
+                    <span class="author"></span>
+                    <button class="interaction-btn" id="likeBtn">
+                        <i class="fa-regular fa-thumbs-up"></i>
+                        <span>0</span>
+                    </button>
+                    <button class="interaction-btn" id="collectBtn">
+                        <i class="fa-regular fa-bookmark"></i>
+                        <span>0</span>
+                    </button>
+                    <button class="interaction-btn" id="commentBtn">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <span>0</span>
+                    </button>
+                    <span class="date"></span>
+                </div>
+                <div class="tags"></div><br>
+                <em class="content"></em><br><br>
+            </div>
+
+            <!-- 留言區 -->
+            <div class="post-area">
+                <h2>留言區</h2>
+                <button id="addCommentBtn">發布留言</button>
+                <div class="comments-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API 配置：設定基本的 axios 實例
+        const api = axios.create({
+            baseURL: 'https://20992077.xyz',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // 全局變量
+        let currentPostId = '';
+        let isLoggedIn = false;
+
+        // 頁面初始化
+        $(document).ready(async function () {
+            // 插入側邊欄並初始化頁面內容
+            $('.container').prepend(createSidebar());
+            isLoggedIn = await getUserInfo();
+            await getPost();
+            await getLevel_0_Comments();
+
+            // 綁定交互按鈕事件
+            $('#likeBtn').click(handleLike);
+            $('#collectBtn').click(handleCollect);
+            $('#commentBtn').click(() => {
+                $('.comments-section')[0].scrollIntoView({ behavior: 'smooth' });
+            });
+            $('#addCommentBtn').click(() => checkLoginAndComment('post', currentPostId));
+        });
+
+        // 獲取文章內容
+        async function getPost() {
+            try {
+                currentPostId = new URLSearchParams(window.location.search).get('id');
+                if (!currentPostId) {
+                    alert('文章ID不存在');
+                    window.location.href = './index.html';
+                    return;
+                }
+
+                const headers = localStorage.getItem('token')
+                    ? { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                    : {};
+                const { data: { post } } = await api.get(`/post/getPostInfo/${currentPostId}`, { headers });
+
+                // 更新頁面上的文章內容
+                renderPost(post);
+            } catch (error) {
+                console.error('獲取文章失敗:', error);
+                alert('獲取文章失敗');
+            }
+        }
+
+        // 更新文章內容到頁面
+        function renderPost(post) {
+            // 使用正確的選擇器 .post-area，並選擇第一個元素（文章區塊）
+            const $post = $('.post-area').first();
+            $post.find('#postTitle').text(post.title);
+            $post.find('.author').text(`作者: ${post.postOwnerAccount}`);
+            $post.find('.date').text(`發表時間: ${dayjs(post.createdAt).format('YYYY-MM-DD HH:mm')}`);
+            $post.find('.content').text(post.content);
+
+            // 判斷要不要顯示編輯按鈕
+            $('#editBtn').css('display', localStorage.getItem('account') === post.postOwnerAccount ? 'block' : 'none');
+
+            $('#likeBtn span').text(post.likersCount);
+            $('#collectBtn span').text(post.collectorsCount);
+            $('#commentBtn span').text(post.commentsCount);
+
+            // 設置互動狀態
+            if (isLoggedIn) {
+                if (post.isLiked) {
+                    $('#likeBtn').addClass('active').find('i')
+                        .removeClass('fa-regular').addClass('fa-solid');
+                }
+                if (post.isCollected) {
+                    $('#collectBtn').addClass('active').find('i')
+                        .removeClass('fa-regular').addClass('fa-solid');
+                }
+            }
+
+            // 更新標籤列表
+            const $tags = $('.tags').empty();
+            post.tags?.forEach(tag => {
+                $tags.append($('<span>').addClass('tag').text(`#${tag}`));
+            });
+        }
+        // 處理點讚功能
+        async function handleLike() {
+            if (!checkLogin()) return;
+
+            try {
+                await api.post(`/post/addLike/post/${currentPostId}`, {}, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                const $btn = $('#likeBtn');
+                const $icon = $btn.find('i');
+                const $count = $btn.find('span');
+
+                toggleButtonState($btn, $icon, $count);
+            } catch (error) {
+                console.error('點讚失敗:', error);
+                alert('點讚失敗');
+            }
+        }
+
+        // 處理收藏功能
+        async function handleCollect() {
+            if (!checkLogin()) return;
+
+            try {
+                const response = await api.post(`/post/addCollect/${currentPostId}`, {}, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+
+                const $btn = $('#collectBtn');
+                const $icon = $btn.find('i');
+                const $count = $btn.find('span');
+
+                if (response.data.message === "取消收藏") {
+                    $btn.removeClass('active');
+                    $icon.removeClass('fa-solid').addClass('fa-regular');
+                    $count.text(parseInt($count.text()) - 1);
+                } else {
+                    $btn.addClass('active');
+                    $icon.removeClass('fa-regular').addClass('fa-solid');
+                    $count.text(parseInt($count.text()) + 1);
+                }
+            } catch (error) {
+                console.error('收藏失敗:', error);
+                alert('收藏失敗');
+            }
+        }
+
+        // 獲取頂層留言
+        async function getLevel_0_Comments() {
+            try {
+                const response = await api.get(`/post/getLevel_0_Comments/${currentPostId}`);
+                const comments = response.data.comments;
+
+                if (comments && comments.length > 0) {
+                    $('.comments-list').html(
+                        comments.map(comment => createCommentHTML(comment)).join('')
+                    );
+                } else {
+                    $('.comments-list').html('<p>暫無留言</p>');
+                }
+            } catch (error) {
+                console.error('獲取頂層留言失敗:', error);
+                $('.comments-list').html('<p>獲取留言失敗</p>');
+            }
+        }
+
+        async function toggleChildren(commentId) {
+            const $childrenContainer = $(`#children-${commentId}`);
+            const isLoaded = $childrenContainer.hasClass('active');
+
+            if (isLoaded) {
+                $childrenContainer.removeClass('active');
+            } else {
+                try {
+                    const response = await api.get(`/post/getChildrenComments/${commentId}`);
+                    const children = response.data.children;
+
+                    if (children?.length) {
+                        $childrenContainer.html(
+                            children.map(child => createCommentHTML(child)).join('')
+                        );
+                    }
+
+                    $childrenContainer.addClass('active');
+                } catch (error) {
+                    console.error('獲取子留言失敗:', error);
+                    $childrenContainer.html('<p>獲取子留言失敗</p>');
+                }
+            }
+        }
+
+        function createCommentHTML(comment) {
+            const hasChildren = comment.childrenId && comment.childrenId.length > 0;
+            const width = 100 - (comment.level * 20);
+
+            return `
+        <div class="post-area" id="comment-${comment._id}" style="margin-left: 20px; width: ${width}%">
+            <div class="comment-header" style="display: flex; align-items: center;">
+                <span style="font-weight: bold; font-size: 1.2em;">${comment.commenterId.account}</span>
+                <span class="date">${dayjs(comment.editAt || comment.createdAt).format('YYYY-MM-DD HH:mm')}</span>
+                <button class="interaction-btn" 
+                    style="display: ${localStorage.getItem('account') === comment.commenterId.account ? 'block' : 'none'}"
+                    onclick="window.open(
+                        'editComment.html?commentId=${comment._id}',
+                        'editWindow',
+                        'width=500,height=300,left=${(window.innerWidth - 500) / 2},top=${(window.innerHeight - 300) / 2}'
+                    )">
+                    <i class="fa-solid fa-pencil"></i>
+                </button>
+            </div>
+            <br>
+            <em>${comment.content}</em>
+            <br><br>
+            <div class="comment-footer">
+                ${hasChildren ? `
+                    <button class="interaction-btn" onclick="toggleChildren('${comment._id}')">
+                        <i class="fa-regular fa-comment-dots"></i>
+                        <span>${comment.childrenId.length}</span>
+                    </button>
+                ` : ''}
+                ${comment.level < 3 ? `
+                    <button onclick="checkLoginAndComment('comment', '${comment._id}')">回覆</button>
+                ` : ''}
+            </div>
+            <div class="nested-comments" id="children-${comment._id}"></div>
+        </div>
+    `;
+        }
+
+
+        function checkLogin() {
+            if (!isLoggedIn && confirm('請先登入')) {
+                window.location.href = './login.html';
+            }
+            return isLoggedIn;
+        }
+
+        // 處理留言功能
+        function checkLoginAndComment(type, id) {
+            if (!checkLogin()) return;
+
+            const url = type === 'post'
+                ? `addComment.html?postId=${id}&parentCommentId=0`
+                : `addComment.html?postId=${currentPostId}&parentCommentId=${id}`;
+
+            window.open(
+                url,
+                'commentWindow',
+                `width=500,height=300,left=(window.innerWidth - 500),top=(window.innerHeight - 300)`
+            );
+        }
+
+        // 通用的按鈕狀態切換函數
+        function toggleButtonState($btn, $icon, $count) {
+            if ($btn.hasClass('active')) {
+                $btn.removeClass('active');
+                $icon.removeClass('fa-solid').addClass('fa-regular');
+                $count.text(parseInt($count.text()) - 1);
+            } else {
+                $btn.addClass('active');
+                $icon.removeClass('fa-regular').addClass('fa-solid');
+                $count.text(parseInt($count.text()) + 1);
+            }
+        }
+    </script>
+</body>
+
+</html>
