@@ -47,8 +47,8 @@
                     window.opener.location.reload();  // 重新整理父視窗
                     window.close();
                 }
-            } catch (error) {
-                alert(error.response?.data?.message || '發布失敗');
+            } catch (err) {
+                alert(err.response?.data?.message || '發布失敗');
             }
         }
     </script>

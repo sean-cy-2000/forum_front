@@ -51,8 +51,8 @@
                 await api.delete(`/post/deletePost/${postId}`);
                 document.querySelector(`.post-area:has(button[onclick*="${postId}"])`).remove();
                 window.location.reload();
-            } catch (error) {
-                alert(error.response?.data?.message || '刪除失敗');
+            } catch (err) {
+                alert(err.response?.data?.message || '刪除失敗');
             }
         }
         async function getMyPosts() {
@@ -68,8 +68,8 @@
                 } else {
                     myPostsDiv.innerHTML = '<p>暫無發表的文章</p>';
                 }
-            } catch (error) {
-                console.error('獲取我的文章失敗:', error);
+            } catch (err) {
+                console.error('獲取我的文章失敗:', err);
                 document.getElementById('myPosts').innerHTML = '<p>獲取文章失敗</p>';
             }
         }
@@ -87,8 +87,8 @@
                 } else {
                     myCollectsDiv.innerHTML = '<p>暫無收藏的文章</p>';
                 }
-            } catch (error) {
-                console.error('獲取收藏文章失敗:', error);
+            } catch (err) {
+                console.error('獲取收藏文章失敗:', err);
                 document.getElementById('myCollects').innerHTML = '<p>獲取收藏失敗</p>';
             }
         }

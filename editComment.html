@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <link rel="stylesheet" href="./style.css">
 </head>
+
 <body class="comment-modal">
     <div>
         <textarea id="content" placeholder="留言內容"></textarea>
@@ -20,11 +22,11 @@
         async function initializeEdit() {
             try {
                 const response = await axios.get(
-                    `https://20992077.xyz/post/getCommentInfo/${commentId}`, 
+                    `https://20992077.xyz/post/getCommentInfo/${commentId}`,
                     { headers: { 'Content-Type': 'application/json' } }
                 );
                 document.getElementById('content').value = response.data.comment.content;
-            } catch (error) {
+            } catch (err) {
                 alert('獲取留言資訊失敗');
             }
         }
@@ -54,12 +56,13 @@
                     window.opener.location.reload();
                     window.close();
                 }
-            } catch (error) {
-                alert(error.response?.data?.message || '編輯失敗');
+            } catch (err) {
+                alert(err.response?.data?.message || '編輯失敗');
             }
         }
 
         window.onload = initializeEdit;
     </script>
 </body>
+
 </html>

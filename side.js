@@ -5,7 +5,7 @@ function createSidebar() {
         <h3>使用者資訊</h3>
         <div id="userInfoArea">
 
-            <!-- 登入才會顯示的內容 -->
+            <!-- 登入才會顯示 -->
             <div id="loggedInContent" style="display: none;">
                 <p>使用者：<span id="userAccount"></span></p>
                 <button class="btn" onclick="window.location.href='./user.html'">個人頁面</button>
@@ -57,7 +57,7 @@ async function getUserInfo() {
         document.getElementById('loggedInContent').style.display = 'block';
         document.getElementById('notLoggedInContent').style.display = 'none';
         return true;
-    } catch (error) {
+    } catch (err) {
         document.getElementById('loggedInContent').style.display = 'none';
         document.getElementById('notLoggedInContent').style.display = 'block';
         return false;

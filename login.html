@@ -18,7 +18,7 @@
         <button onclick="login()">登入</button>
         <button onclick="register()">註冊</button>
     </div>
-    
+
     <script>
         async function login() {
             try {
@@ -34,8 +34,8 @@
                 localStorage.setItem('account', response.data.account);
                 alert(response.data.message);
                 window.location.href = './index.html';
-            } catch (error) {
-                alert(error.response?.data?.message || `登入失敗 ${error}`);
+            } catch (err) {
+                alert(error.response?.data?.message || `登入失敗 ${err}`);
             }
         }
 
@@ -49,8 +49,8 @@
                 });
 
                 alert(response.data.message);
-            } catch (error) {
-                alert(error.response?.data?.message || '註冊失敗');
+            } catch (err) {
+                alert(err.response?.data?.message || '註冊失敗');
             }
         }
     </script>

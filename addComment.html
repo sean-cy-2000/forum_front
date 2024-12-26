@@ -53,8 +53,8 @@
                     // 刷新父視窗（post.html）的留言列表
                     window.opener.location.reload();
                 }
-            } catch (error) {
-                alert(error.response?.data?.message || '發布失敗');
+            } catch (err) {
+                alert(err.response?.data?.message || '發布失敗');
             }
         }
     </script>

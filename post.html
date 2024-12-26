@@ -112,8 +112,8 @@
 
                 // 更新頁面上的文章內容
                 renderPost(post);
-            } catch (error) {
-                console.error('獲取文章失敗:', error);
+            } catch (err) {
+                console.error('獲取文章失敗:', err);
                 alert('獲取文章失敗');
             }
         }
@@ -166,8 +166,8 @@
                 const $count = $btn.find('span');
 
                 toggleButtonState($btn, $icon, $count);
-            } catch (error) {
-                console.error('點讚失敗:', error);
+            } catch (err) {
+                console.error('點讚失敗:', err);
                 alert('點讚失敗');
             }
         }
@@ -194,8 +194,8 @@
                     $icon.removeClass('fa-regular').addClass('fa-solid');
                     $count.text(parseInt($count.text()) + 1);
                 }
-            } catch (error) {
-                console.error('收藏失敗:', error);
+            } catch (err) {
+                console.error('收藏失敗:', err);
                 alert('收藏失敗');
             }
         }
@@ -213,8 +213,8 @@
                 } else {
                     $('.comments-list').html('<p>暫無留言</p>');
                 }
-            } catch (error) {
-                console.error('獲取頂層留言失敗:', error);
+            } catch (err) {
+                console.error('獲取頂層留言失敗:', err);
                 $('.comments-list').html('<p>獲取留言失敗</p>');
             }
         }
@@ -237,8 +237,8 @@
                     }
 
                     $childrenContainer.addClass('active');
-                } catch (error) {
-                    console.error('獲取子留言失敗:', error);
+                } catch (err) {
+                    console.error('獲取子留言失敗:', err);
                     $childrenContainer.html('<p>獲取子留言失敗</p>');
                 }
             }

@@ -77,8 +77,8 @@
                 const totalPages = Math.ceil(postsCount.data.count / pageSize);
                 document.getElementById('totalPageSpan').textContent = totalPages;
                 document.getElementById('currentPageSpan').textContent = currentPage;
-            } catch (error) {
-                console.error('獲取文章數量失敗:', error);
+            } catch (err) {
+                console.error('獲取文章數量失敗:', err);
             }
         }
 
@@ -118,8 +118,8 @@
                 } else {
                     postArea.innerHTML = '<p>暫無文章</p>';
                 }
-            } catch (error) {
-                console.error('獲取文章失敗:', error);
+            } catch (err) {
+                console.error('獲取文章失敗:', err);
                 document.getElementById('postArea').innerHTML = '<p>獲取文章失敗</p>';
             }
         }
